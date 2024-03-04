@@ -1,0 +1,17 @@
+# config.toml
+
+# Server configurations
+[server]
+port = 8501
+
+# Caching configurations
+[caching]
+clearOnSessionStart = true
+
+# Logging configurations
+[logger]
+level = "info"
+
+[client]
+
+showSidebarNavigation = false
