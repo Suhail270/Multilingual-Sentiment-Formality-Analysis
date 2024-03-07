@@ -1,27 +1,25 @@
-# Project Title
-
-Brief description or tagline for your project.
-
-## Overview
-
-A short overview of what the project does, its main features, and why it exists.
-
-## Table of Contents
-
-- [Getting Started](#getting-started)
-  - [Prerequisites](#prerequisites)
-  - [Installation](#installation)
-- [Usage](#usage)
-- [Contributing](#contributing)
-- [License](#license)
+# AAICO Coding Round - Suhail Ahmed
 
 ## Getting Started
 
+Running this project will require an active internet connection.
+
 ### Prerequisites
 
-List any prerequisites or requirements that users need to install before using your project. Include things like Python version, dependencies, etc.
+Most of the rquirements mentioned will already be on the system, please run it just in case.
 
 ```bash
-# Example
 pip install -r requirements.txt
 ```
+
+### Running Project
+
+Please ensure that you are in the root directory: suhail-aaico. Upon doing so, run the following command in the terminal. This will open the web application locally.
+
+```bash
+streamlit run app.py
+```
+
+## Credits
+
+Special thank you to hugging face and https://github.com/kkdai/ for making their resources publicly available.
