@@ -1,43 +1,27 @@
-# PDF Upload and Display
+# Project Title
 
-This is a simple web application that allows users to upload a PDF file and display its pages as images. Users can select a page from the uploaded PDF and view its content as text.
+Brief description or tagline for your project.
 
-## Deploy
+## Overview
 
-[![Deploy to Render](http://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy)
+A short overview of what the project does, its main features, and why it exists.
 
-[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy)
+## Table of Contents
 
-## Demo
+- [Getting Started](#getting-started)
+  - [Prerequisites](#prerequisites)
+  - [Installation](#installation)
+- [Usage](#usage)
+- [Contributing](#contributing)
+- [License](#license)
 
-![](img/demo.png)
+## Getting Started
 
-## Installation
+### Prerequisites
 
-Clone the repository to your local machine.
-Install the required packages using `pip install -r requirements.txt`.
+List any prerequisites or requirements that users need to install before using your project. Include things like Python version, dependencies, etc.
 
-Run the app using streamlit run app.py.
-
-## Usage
-
-- Upload a PDF file using the file uploader.
-- Select a page from the uploaded PDF using the selectbox.
-- The selected page will be displayed as an image in the first column.
-- The content of the selected page will be displayed as text in the second column.
-
-## Dependencies
-
-- streamlit
-- pdf2image
-- PyPDF2
-- Pillow
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## Acknowledgments
-
-This project was inspired by the Streamlit Gallery and the PyPDF2 documentation.
-Thanks to the developers of the streamlit and pdf2image packages for making this project possible.
+```bash
+# Example
+pip install -r requirements.txt
+```

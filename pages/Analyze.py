@@ -1,79 +1,59 @@
+# Import necessary libraries and modules
 import streamlit as st
-from datetime import datetime
 from streamlit_extras.switch_page_button import switch_page
+from datetime import datetime
+from modules.models import sentiment_formality_analysis
+import pandas as pd
 
-def is_valid_date(date_string, date_format="%d/%m/%Y"):
-    try:
-        datetime.strptime(date_string, date_format)
-        return True
-    except ValueError:
-        return False
+# Set Streamlit page title
+st.title("Sentiment & Formality Analysis")
 
-st.title("Analyze")
+# Button to navigate back to 'Read PDF' page
+if st.button("Back to Read PDF"):
+    switch_page("read")
 
+# Button to navigate back to 'Upload PDF' page
 if st.button("Back to Upload PDF"):
     switch_page("app")
 
-if st.button("Analyze"):
-    switch_page("Translate")
-data_stream = st.session_state["pdf_content"]
+# Retrieve data from Streamlit session state
+text = st.session_state['text']
+date = st.session_state['date']
+time = st.session_state['time']
+gender = st.session_state['gender']
 
-st.write("Analysis:")
+# Create a DataFrame for analysis
+df = pd.DataFrame(date, columns=['Date'], index=None)
+df['Time'] = time
+df['Gender'] = gender
+df['Sentence (In English)'] = text
 
-count = 0
-data = {}
-d, s = [], []
-time, gender = [], []
-date, sentence = '', ''
-skip, header = True, False
-here = False
+# Define a comparison date for filtering data
+comparison_date = datetime.strptime('01/03/2023', "%d/%m/%Y")
 
-for i in range(len(data_stream)):
+# Perform sentiment and formality analysis with a loading spinner
+with st.spinner('Operation in Progress...'):
 
-    if data_stream[i]=='D' and skip:
-        skip = False
-        sentence += data_stream[i]
-    
-    else:
-        if not skip:
-            sentence += data_stream[i]
-            if sentence == 'Date  Time  Male / Female  Answer ' and not header:
-                header = True
-                sentence = ''
-            
-            elif data_stream[i] == ' ':
-                sentence += data_stream[i]
+    # Iterate through the DataFrame for sentiment and formality analysis
+    for i in range(len(df)):
+        # Check if the date is before March 1, 2023
+        if int(df.loc[i, "Date"][3]) < 1 and int(df.loc[i, "Date"][4]) < 3 and int(df.loc[i, "Date"][-4:]) <= 2023:
+            df.loc[i, "Sentiment"] = -1000
+            df.loc[i, "Formality"] = -1000
+        else:
+            # Perform sentiment and formality analysis using an external module
+            df.loc[i, "Sentence (In English)"], df.loc[i, "Sentiment"], df.loc[i, "Formality"] = sentiment_formality_analysis(df.loc[i, "Sentence (In English)"])
 
-            elif (i == len(data_stream) - 1) or (len(sentence)>=10 and is_valid_date(sentence[-10:])):
-                date = sentence[-10:]
+    # Sort the DataFrame based on sentiment scores in descending order
+    df_sorted = df.sort_values(by='Sentiment', ascending=False)
 
-                timeV = sentence[2:13]
+    # Replace placeholder values with 'N/A'
+    df_sorted.replace(-1000, 'N/A', inplace=True)
 
-                if timeV[3].isnumeric():
-                    genderV = sentence[17]
-                    sentenceV = sentence[18:-10]
-                else:
-                    genderV = sentence[16]
-                    sentenceV = sentence[17:-10]
-                
+    # Clear any previous content
+    st.empty()
 
-                time.append(timeV)
-                gender.append(genderV)
-                d.append(date)
-                s.append(sentenceV)
-                data[date] = sentence
-                sentence = ''
-
-s.pop(0)
-d.pop()
-
-time.pop(0)
-gender.pop(0)
-
-st.session_state['text'] = s
-st.session_state['date'] = d
-st.session_state['time'] = time
-st.session_state['gender'] = gender
-for date, time, g, sentence in zip(d,time,gender,s):
-    st.write(date,":",time,":",g,':',sentence)
-    st.write("\n")
+# Display success message and the sorted DataFrame in a table
+st.success('Done!')
+df_reset_index = df_sorted.reset_index(drop=True)
+st.table(df_reset_index)

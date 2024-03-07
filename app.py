@@ -1,10 +1,10 @@
 import streamlit as st
 from pdf2image import convert_from_bytes
 from PyPDF2 import PdfReader
-import json
-import requests
 from streamlit_extras.switch_page_button import switch_page
 
+
+# Function for reading PDF using PyPDF2
 
 def read_pdf_page(file, page_number):
     pdfReader = PdfReader(file)
@@ -27,7 +27,7 @@ def main():
     if pdf_file:
         # Create a selectbox to choose the page number
         if st.button("Read PDF"):
-            switch_page("Analyze")
+            switch_page("read")
 
         pdfReader = PdfReader(pdf_file)
         page_numbers = list(range(1, len(pdfReader.pages) + 1))
