@@ -1,55 +1,86 @@
+from streamlit_webrtc import VideoTransformerBase, webrtc_streamer
+import av
 import streamlit as st
-from pdf2image import convert_from_bytes
-from PyPDF2 import PdfReader
-from streamlit_extras.switch_page_button import switch_page
+import cv2
+import numpy as np
+from keras.models import load_model
+from keras.preprocessing.image import img_to_array
+import tempfile
 
 
-# Function for reading PDF using PyPDF2
+try:
+    classifier = load_model('model.h5')
+    face_classifier = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
+    emotion_labels = ['Angry', 'Disgust', 'Fear', 'Happy', 'Neutral', 'Sad', 'Surprise']
+except Exception as e:
+    st.write(f"Error loading model or cascade classifier: {e}")
 
-def read_pdf_page(file, page_number):
-    pdfReader = PdfReader(file)
-    page = pdfReader.pages[page_number]
-    text = page.extract_text()
-    text = text.split("\n")
-    return page.extract_text()
+emotion_counts = {label: 0 for label in emotion_labels}
 
 
-def on_text_area_change():
-    st.session_state.page_text = st.session_state.my_text_area
+class VideoTransformer(VideoTransformerBase):
+    def transform(self, frame):
+        img = frame.to_ndarray(format="bgr24")
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        faces = face_classifier.detectMultiScale(gray, 1.3, 5)
+        for (x, y, w, h) in faces:
+            roi_gray = gray[y:y+h, x:x+w]
+            roi_gray = cv2.resize(roi_gray, (48, 48), interpolation=cv2.INTER_AREA)
+            roi = roi_gray.astype('float') / 255.0
+            roi = img_to_array(roi)
+            roi = np.expand_dims(roi, axis=0)
+            prediction = classifier.predict(roi)[0]
+            label = emotion_labels[prediction.argmax()]
+            emotion_counts[label] += 1
+            cv2.putText(img, label, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+            cv2.rectangle(img, (x, y), (x+w, y+h), (255, 0, 0), 2)
+        return img
+
+
+def process_video(uploaded_file):
+    image_list = []
+    with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
+        tmp_file.write(uploaded_file.read())
+        video_capture = cv2.VideoCapture(tmp_file.name)
+        while True:
+            ret, frame = video_capture.read()
+            if not ret:
+                break
+            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            faces = face_classifier.detectMultiScale(gray, 1.3, 5)
+            for (x, y, w, h) in faces:
+                roi_gray = gray[y:y+h, x:x+w]
+                roi_gray = cv2.resize(roi_gray, (48, 48), interpolation=cv2.INTER_AREA)
+                roi = roi_gray.astype('float') / 255.0
+                roi = img_to_array(roi)
+                roi = np.expand_dims(roi, axis=0)
+                prediction = classifier.predict(roi)[0]
+                label = emotion_labels[prediction.argmax()]
+                emotion_counts[label] += 1
+                cv2.putText(frame, label, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+                cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 0, 0), 2)
+            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            image_list.append(frame_rgb)
+        video_capture.release()
+    
+    st.write('Detected Emotion: ', max(emotion_counts, key=emotion_counts.get))
+    st.write('Confidence Level (%): ', round((emotion_counts[max(emotion_counts, key=emotion_counts.get)] / len(image_list) * 100), 2))
+    st.write('------------------------')
+
+    st.write('Emotion Detected Per Frame:')
+    for label, count in emotion_counts.items():
+        st.write(f'{label}: {count}')
+
+    image_index = st.slider("Please use the slider to drag across different frames", 0, len(image_list) - 1, 0)
+    st.image(image_list[image_index], use_column_width=True)
 
 
 def main():
-    st.set_page_config(page_title="PDF Upload and Display")
-    st.title("PDF Upload and Display")
-    # PDF file upload
-    pdf_file = st.file_uploader("Upload a PDF file", type=["pdf"])
+    st.title("Emotion Detection in Uploaded Videos")
+    uploaded_file = st.file_uploader("Choose a video file", type=["mp4", "avi", "flv"])
+    if uploaded_file is not None:
+        process_video(uploaded_file)
 
-    if pdf_file:
-        # Create a selectbox to choose the page number
-        if st.button("Read PDF"):
-            switch_page("read")
 
-        pdfReader = PdfReader(pdf_file)
-        page_numbers = list(range(1, len(pdfReader.pages) + 1))
-        selected_page = st.selectbox("Select a page", page_numbers)
-        selected_page -= 1
-        # Convert the selected page to an image
-        images = convert_from_bytes(pdf_file.getvalue())
-        image = images[selected_page]
-
-        # Create two columns to display the image and text
-        col1, col2 = st.columns(2)
-
-        pdf_content = read_pdf_page(pdf_file, selected_page)
-
-        st.session_state['pdf_content'] = pdf_content
-
-        # Display the image in the first column
-        col1.image(image, caption=f"Page {selected_page + 1}")
-
-        col2.text_area("Page Text", height=800, value=pdf_content,
-                       key="my_text_area", on_change=on_text_area_change)
-        
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
