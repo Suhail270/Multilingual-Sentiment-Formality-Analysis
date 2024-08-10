@@ -1,5 +1,3 @@
-# AAICO Coding Round - Suhail Ahmed
-
 ## Getting Started
 
 Running this project will require an active internet connection. There is also a report titled "Assignment Report" attached detailing the project, its architecture and features supporting visualization. I would strongly recommend reading the report for a hollistc insight into the application.
